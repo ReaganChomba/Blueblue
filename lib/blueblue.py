@@ -169,6 +169,21 @@ def sync(config, db):
                 clients.append(client)
 
 
+def validate_xray(settings, config_path=None):
+    """Deployment guard: validate with the service identity rather than root's access."""
+    service = settings.get('service', 'xray.service')
+    username = run('systemctl', 'show', service, '-p', 'User', '--value', capture=True).strip() or 'root'
+    group = run('systemctl', 'show', service, '-p', 'Group', '--value', capture=True).strip()
+    command = [settings.get('binary', '/usr/local/bin/xray'), 'run', '-test',
+               '-config', str(config_path or CONFIG)]
+    if username != 'root':
+        prefix = ['runuser', '--user', username]
+        if group:
+            prefix += ['--group', group]
+        command = prefix + ['--'] + command
+    run(*command)
+
+
 def transaction(config, db, settings, extra=None, restart=True):
     sync(config, db)
     files = {CONFIG: encoded(config), DB: encoded(db), SETTINGS: encoded(settings)}
@@ -182,8 +197,7 @@ def transaction(config, db, settings, extra=None, restart=True):
             atomic(p, files[p], 0o640 if p == CONFIG else 0o600)
         if restart:
             # Deployment-time guards. These are not executed during repository development.
-            binary = settings.get('binary', '/usr/local/bin/xray')
-            run(binary, 'run', '-test', '-config', str(CONFIG))
+            validate_xray(settings)
             if any(str(p).startswith('/etc/nginx/') for p in changed):
                 run('nginx', '-t')
             run('systemctl', 'restart', settings.get('service', 'xray.service'))
