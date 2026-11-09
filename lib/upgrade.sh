@@ -66,6 +66,12 @@ install_xray_assets "$stage" "$XRAY_BINARY"
 systemctl stop stunnel5 ws-stunnel
 python3 "$BLUEBLUE_ROOT/lib/stunnel.py" --stage
 systemctl daemon-reload
+python3 - "$BLUEBLUE_ROOT/lib" "$XRAY_CONFIG" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+from blueblue import SETTINGS, read_json, validate_xray
+validate_xray(read_json(SETTINGS, {}), sys.argv[2])
+PY
 systemctl enable stunnel5 ws-stunnel
 systemctl restart "$XRAY_SERVICE"
 systemctl reload nginx
