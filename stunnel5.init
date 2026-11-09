@@ -1,0 +1,3 @@
+#!/bin/sh
+# Compatibility wrapper; the authoritative unit uses the distro Stunnel binary.
+exec systemctl "$1" stunnel5.service
