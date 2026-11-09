@@ -1,0 +1,1 @@
+# Legacy remote licensing is retired. No server identity is uploaded.
