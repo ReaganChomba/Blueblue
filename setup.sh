@@ -7,7 +7,7 @@ if [[ ! -f "$ROOT/lib/install.sh" ]]; then
     command -v python3 >/dev/null && command -v curl >/dev/null || {
         echo 'Install prerequisites: apt-get update && apt-get install -y ca-certificates curl python3' >&2; exit 1;
     }
-    ref=${BLUEBLUE_REF:-main}
+    ref=${BLUEBLUE_REF:-modernization-2026}
     [[ $ref =~ ^[A-Za-z0-9._-]+$ ]] || { echo 'Invalid BLUEBLUE_REF'; exit 1; }
     bundle=$(mktemp -d)
     curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
