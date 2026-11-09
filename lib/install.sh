@@ -187,7 +187,12 @@ Sodosok WS/GRPC : 443
 UDPGW : optional; see README
 EOF
     systemctl daemon-reload
-    /usr/local/bin/xray run -test -config /etc/xray/config.json
+    python3 - "$BLUEBLUE_ROOT/lib" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+from blueblue import SETTINGS, read_json, validate_xray
+validate_xray(read_json(SETTINGS, {}))
+PY
     nginx -t
     systemctl enable --now xray dropbear ssh ws-stunnel
     systemctl enable nginx
