@@ -6,6 +6,16 @@ Blueblue manages SSH over TLS/HTTP upgrade and Xray accounts, including VLESS XH
 
 **Implementation status:** source changes have received code inspection only. No tests, benchmarks, live installations or VPS service operations were performed during this work. Compatibility and migration behavior require validation in an isolated Linux environment before production use. Commands below are instructions for the operator; they were not executed as part of this implementation.
 
+## Manual publication
+
+The clean modernization history is on `modernization-2026`. From the local project directory, publish it with:
+
+```bash
+git push --set-upstream origin modernization-2026
+```
+
+After publishing, you can set `modernization-2026` as the default branch in the fork's GitHub settings. Changing the default branch does not redirect raw URLs containing an explicit branch name; the installation links and bootstrap defaults below already use `modernization-2026`. The existing remote `main` remains unchanged. Publication is operator-managed; no successful push is claimed here.
+
 ## Platforms and prerequisites
 
 - Primary targets: Ubuntu 22.04 LTS and 24.04 LTS with systemd.
@@ -23,7 +33,7 @@ Use a new server. The installer refuses an existing Xray configuration or occupi
 Download a reviewed copy of the project, then run:
 
 ```bash
-git clone https://github.com/reaganchomba/blueblue.git
+git clone --branch modernization-2026 https://github.com/reaganchomba/blueblue.git
 cd blueblue
 sudo bash setup.sh
 ```
@@ -33,10 +43,10 @@ sudo bash setup.sh
 The standalone fresh entrypoint is available at:
 
 ```text
-https://raw.githubusercontent.com/reaganchomba/blueblue/main/setup.sh
+https://raw.githubusercontent.com/reaganchomba/blueblue/modernization-2026/setup.sh
 ```
 
-A standalone entrypoint resolves `BLUEBLUE_REF` (default `main`) to an immutable commit, retrieves that source archive over verified HTTPS, checks archive paths and retains it locally. Prefer reviewing the complete bundle and setting `BLUEBLUE_REF` to a reviewed commit. There is no `curl | bash` bootstrap. Installation links become usable after the operator publishes this local source to the intended repository.
+A standalone entrypoint resolves `BLUEBLUE_REF` (default `modernization-2026`) to an immutable commit, retrieves that source archive over verified HTTPS, checks archive paths and retains it locally. Prefer reviewing the complete bundle and setting `BLUEBLUE_REF` to a reviewed commit. There is no `curl | bash` bootstrap. Installation links become usable after the operator publishes this local source to the intended repository.
 
 After installation:
 
@@ -59,7 +69,7 @@ sudo bash upgrade-existing.sh
 Standalone entrypoint:
 
 ```text
-https://raw.githubusercontent.com/reaganchomba/blueblue/main/upgrade-existing.sh
+https://raw.githubusercontent.com/reaganchomba/blueblue/modernization-2026/upgrade-existing.sh
 ```
 
 The live upgrade detects the effective Xray systemd command, binary, configuration, Nginx include tree, HTTPS server, domain and certificate paths. It saves a timestamped root-only snapshot under `/var/backups/blueblue/`, merges XHTTP into the current configuration and adds its managed location to the selected HTTPS server. It updates managed commands, Xray and relevant distribution packages, and migrates the Blueblue Stunnel instance. Running it again replaces the same managed location/unit rather than adding duplicates.
@@ -235,4 +245,4 @@ Technical references:
 - [Outbound Mux documentation](https://xtls.github.io/en/config/outbound.html), [Mux.Cool protocol](https://xtls.github.io/en/development/protocols/muxcool.html).
 - [V2rayN share-link implementation](https://github.com/2dust/v2rayN/blob/master/v2rayN/ServiceLib/Handler/Fmt/BaseFmt.cs), [Stunnel manual](https://www.stunnel.org/static/stunnel.html).
 
-Original Blueblue source and authorship: [NevermoreSSH/Blueblue](https://github.com/NevermoreSSH/Blueblue), original copyright comments © 2022 NevermoreSSH. Original-author and third-party attribution are retained; runtime ownership/download references use `reaganchomba/blueblue`. Git remotes were configured only after the subsequent explicit publication request: `origin` is the intended fork and `upstream` is the original source. The modernization is published on `modernization-2026`; the fork's existing `main` is preserved. Installation URLs targeting `main` require integrating this branch into `main` first.
+Original Blueblue source and authorship: [NevermoreSSH/Blueblue](https://github.com/NevermoreSSH/Blueblue), original copyright comments © 2022 NevermoreSSH. Original-author and third-party attribution are retained; runtime ownership/download references use `reaganchomba/blueblue`. Git remotes were configured only after the subsequent explicit publication request: `origin` is the intended fork and `upstream` is the original source. The modernization is prepared locally on `modernization-2026` for manual publication; the fork's existing `main` is preserved. Project installation URLs and the default `BLUEBLUE_REF` explicitly use `modernization-2026`, independently of the repository's default-branch setting.
