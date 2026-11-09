@@ -57,6 +57,43 @@ For fresh installations, Certbot uses `/home/vps/public_html` for HTTP-01. Add D
 
 Do not run Renew Certificate as an XHTTP migration step. A working installation already has everything XHTTP needs for external TLS termination.
 
+### RAW TLS: permission denied on a Let’s Encrypt live certificate
+
+An error such as `failed to parse certificate > open /etc/letsencrypt/live/DOMAIN/fullchain.pem: permission denied` means Xray cannot open the file. The deprecation warnings printed before it are separate from this startup failure. Certbot's `live` paths are symlinks to files under `archive`; access requires directory traversal through both paths plus read access to the resolved certificate/key files. See [Certbot's certificate-location and permissions documentation](https://eff-certbot.readthedocs.io/en/stable/using.html#where-are-my-certificates).
+
+The original modernization ACL helper resolved the symlink before granting traversal and therefore missed the `live` ancestors. That defect is corrected in `lib/stunnel.py`; its shared helper is also used by RAW enablement and certificate-renewal consumers. No certificate/key bytes, symlink destinations, ACME accounts or renewal jobs need to change for this repair.
+
+After publishing and obtaining the corrected project bundle, an operator can repair the existing RAW inbound permissions without reinstalling. From that bundle directory, run:
+
+```bash
+sudo python3 - <<'PY'
+import json
+import subprocess
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path('lib').resolve()))
+from stunnel import grant
+from blueblue import strip_comments
+settings_path = Path('/etc/blueblue/settings.json')
+settings = json.loads(settings_path.read_text()) if settings_path.exists() else {}
+service = settings.get('service', 'xray.service')
+user = subprocess.check_output(['systemctl', 'show', service, '-p', 'User', '--value'], text=True).strip()
+if not user or user == 'root':
+    raise SystemExit('Xray runs as root; inspect unit sandbox settings instead of granting user ACLs.')
+config = json.loads(strip_comments(Path(settings.get('config', '/etc/xray/config.json')).read_text()))
+for inbound in config.get('inbounds', []):
+    stream = inbound.get('streamSettings', {})
+    if stream.get('security') == 'tls':
+        for certificate in stream.get('tlsSettings', {}).get('certificates', []):
+            for field in ('certificateFile', 'keyFile'):
+                if certificate.get(field):
+                    grant(certificate[field], user)
+print('Granted certificate/key read access and directory traversal to', user)
+PY
+```
+
+This requires the `acl` package and the corrected local bundle. It changes permissions only; it does not start services. The operator can then run `sudo systemctl restart xray.service` followed by `systemctl status xray.service --no-pager -l`. Use the configured service name if customized. No repair or service restart was executed during development. Future account transactions validate the configuration as the Xray service user before restarting, so a certificate access failure is not hidden by a root-only check. This guard does not reproduce systemd mount namespaces or other sandbox restrictions.
+
 ## Stunnel troubleshooting
 
 Static inspection found concrete legacy defects:
