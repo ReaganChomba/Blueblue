@@ -12,11 +12,21 @@ from blueblue import STATE, atomic, read_json, SETTINGS, run
 
 
 def grant(path, username):
-    path = Path(path).resolve(strict=True)
-    for parent in reversed(path.parents):
-        if str(parent) != '/':
-            run('setfacl', '-m', f'u:{username}:--x', str(parent))
-    run('setfacl', '-m', f'u:{username}:r--', str(path))
+    # Let’s Encrypt live/*.pem points into archive/. Both directory paths must
+    # be traversable: resolving first loses the restrictive live/ ancestors.
+    requested = Path(os.path.abspath(path))
+    resolved = requested.resolve(strict=True)
+    directories = set()
+    for parent in requested.parents:
+        directories.add(parent)
+        target = parent.resolve(strict=True)
+        directories.add(target)
+        directories.update(target.parents)
+    directories.update(resolved.parents)
+    for directory in sorted(directories, key=lambda item: (len(item.parts), str(item))):
+        if directory != Path('/'):
+            run('setfacl', '-m', f'u:{username}:--x', str(directory))
+    run('setfacl', '-m', f'u:{username}:r--', str(resolved))
 
 
 def main():
